@@ -14,7 +14,7 @@ from PIL import Image
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 
-st.beta_set_page_config(layout="wide")
+#st.set_page_config(layout="wide")
 
 
 # Creates a double column to insert the nba logo and the title web app
