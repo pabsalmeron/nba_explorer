@@ -1,0 +1,50 @@
+import requests
+import pandas
+from bs4 import BeautifulSoup
+import time
+import csv 
+
+empresas = ['isotools', 'isowin-s.l.']
+
+def get_url(empresa):
+    url = 'https://www.incibe.es/protege-tu-empresa/catalogo-de-ciberseguridad/listado-empresas/' + str(empresa)
+    return url
+
+def get_record(card):
+    nombre_empresa = card.find('h1', 'page-title').text.strip()
+    tipo_empresa = card.find('div', 'field-type-taxonomy-term-reference').text.strip()
+    web_page = card.div.div.div.div.div.a.text
+    email = card.find('div', 'field-name-field-emp-email').text.strip().replace(u'\xa0', u' ')
+    num_telf = card.find('div', 'field-name-field-emp-telefono').text.strip().replace(u'\xa0', u' ')
+    provincia = card.find('div' ,'field-name-field-emp-provincia').text.strip().replace(u'\xa0', u' ')
+    pais = card.find('div', 'field-name-field-emp-pais').text.strip().replace(u'\xa0', u' ')
+    descripcion = card.find('div', 'field-type-text-with-summary').text
+    soluciones_servicios_raw = list(card.find('div', 'field-name-field-emp-servicios').text.strip())
+    soluciones_productos_1 = card.find('div','views-row-1' )
+    soluciones_productos_2 = card.find('div','views-row-2' )
+    soluciones_productos_3 = card.find('div','views-row-3' )
+    soluciones_productos_4 = card.find('div','views-row-4' )
+    categoria_productos = card.find('div', 'group-cat-productos').text.strip().replace(u'\n', u' ')
+    categoria_servicios = card.find('div', 'view-soluciones' ).text.strip()
+    record = (nombre_empresa, tipo_empresa, web_page, email, num_telf, provincia, pais, descripcion, descripcion, soluciones_servicios_raw, soluciones_productos_1, soluciones_productos_2, soluciones_productos_3, soluciones_productos_4, categoria_productos, categoria_servicios)
+    return record
+ 
+def main(empresa):
+    records = []
+    url = get_url(empresa)
+    while True:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+#         with open('cache.html', 'wb') as f:
+#             f.write(response.content)
+#         with open('cache.html', 'rb') as f:
+#             soup = BeautifulSoup(f.read(), 'html.parser')
+        cards = soup.find_all('div', class_='block block-system odd')
+        for card in cards:
+            record = get_record(card)
+            records.append(record)
+            
+    with open('incibe-results.csv', 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['nombre_empresa', 'tipo_empresa', 'web_page', 'email', 'num_telf', 'provincia', 'pais', 'descripcion', 'descripcion', 'soluciones_servicios_raw', 'soluciones_productos_1', 'soluciones_productos_2', 'soluciones_productos_3', 'soluciones_productos_4', 'categoria_productos', 'categoria_servicios'])
+        writer.writerows(records)
